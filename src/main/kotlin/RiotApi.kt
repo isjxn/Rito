@@ -5,9 +5,15 @@ import dev.nanologic.model.QuitGameMessage
 import dev.nanologic.model.SummonerProfile
 import dev.nanologic.model.champselect.ChampSelect
 import dev.nanologic.model.champselect.MySelection
+import dev.nanologic.model.practicegame.CreatePracticeGameRequestDto
+import dev.nanologic.model.practicegame.GameMap
+import dev.nanologic.model.practicegame.PlayerGcoTokens
+import dev.nanologic.model.practicegame.PracticeGameConfig
 import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import io.ktor.util.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.util.Date
 
@@ -58,7 +64,60 @@ class RiotApi(
         return true
     }
 
-    private fun generateCustomLobby() {
+    private suspend fun generateCustomLobby() {
+        // Assuming placeholder values for async calls
+        val clientVersion = "1.0" // Placeholder for await getClientVersion()
+        val simpleInventoryJwt = "simpleInventoryJwtPlaceholder" // Placeholder for await getSimpleInventoryJwt()
+        val idToken = "idTokenPlaceholder" // Placeholder for await getIdToken()
+        val userInfoJwt = "userInfoJwtPlaceholder" // Placeholder for await getUserInfoJwt()
+        val summonerToken = "summonerTokenPlaceholder" // Placeholder for await getSummonerToken()
+
+        val gameMap = GameMap(
+            __class = "com.riotgames.platform.game.map.GameMap",
+            description = "",
+            displayName = "",
+            mapId = 11,
+            minCustomPlayers = 1,
+            name = "",
+            totalPlayers = 10
+        )
+
+        val practiceGameConfig = PracticeGameConfig(
+            __class = "com.riotgames.platform.game.PracticeGameConfig",
+            allowSpectators = "NONE",
+            gameMap = gameMap,
+            gameMode = "CLASSIC",
+            gameMutators = emptyList(),
+            gameName = "test",
+            gamePassword = "",
+            gameTypeConfig = 1,
+            gameVersion = clientVersion,
+            maxNumPlayers = 10,
+            passbackDataPacket = null,
+            passbackUrl = null,
+            region = ""
+        )
+
+        val playerGcoTokens = PlayerGcoTokens(
+            __class = "com.riotgames.platform.util.tokens.PlayerGcoTokens",
+            idToken = idToken,
+            userInfoJwt = userInfoJwt,
+            summonerToken = summonerToken
+        )
+
+        val createPracticeGameRequestDto = CreatePracticeGameRequestDto(
+            __class = "com.riotgames.platform.game.lcds.dto.CreatePracticeGameRequestDto",
+            practiceGameConfig = practiceGameConfig,
+            simpleInventoryJwt = simpleInventoryJwt,
+            playerGcoTokens = playerGcoTokens
+        )
+
+        val response = http.postRequest("/lol-login/v1/session/invoke", StringValues.build {
+            this.append("destination", "gameService")
+            this.append("method", "createPracticeGameV4")
+            this.append("args", listOf(Json.encodeToString(createPracticeGameRequestDto)).toString())
+        })
+
 
     }
 
@@ -87,9 +146,11 @@ class RiotApi(
     }
 
     suspend fun crashLobby() {
-        //quitCustomLobby().run {
-            getCheckTimerSelectedChamp()
-        //}
+        //quitCustomLobby()
+        //val canCrash = getCheckTimerSelectedChamp()
 
+        //if (canCrash) {
+            /*val customLobby =*/ generateCustomLobby()
+        //}
     }
 }
