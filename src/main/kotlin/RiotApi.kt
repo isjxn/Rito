@@ -9,6 +9,7 @@ import dev.nanologic.model.practicegame.GameMap
 import dev.nanologic.model.practicegame.PlayerGcoTokens
 import dev.nanologic.model.practicegame.PracticeGameConfig
 import dev.nanologic.model.simpleinventoryjwt.SimpleInventoryJwtRoot
+import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import io.ktor.util.*
@@ -16,10 +17,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
+
 import java.time.Instant
 import java.util.*
+import java.net.URI
+import java.net.URLEncoder
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.charset.StandardCharsets
+import java.util.Base64
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 class RiotApi(
     private val leagueClient: LeagueClient,
@@ -111,22 +121,15 @@ class RiotApi(
             simpleInventoryJwt = simpleInventoryJwt.data.itemsJwt,
             playerGcoTokens = playerGcoTokens
         )
-        val json = Json { prettyPrint = false }
 
-        val encodedJson = withContext(Dispatchers.IO) {
-            URLEncoder.encode(json.encodeToString(listOf(createPracticeGameRequestDto)), StandardCharsets.UTF_8)
-        }
-
-        val response = http.postRequest("/lol-login/v1/session/invoke", StringValues.build {
+        val parameters = StringValues.build {
             this.append("destination", "gameService")
             this.append("method", "createPracticeGameV4")
-            this.append("args", encodedJson)
-        })
+            this.append("args", Json.encodeToString(listOf(createPracticeGameRequestDto)))
+        }
 
-
-        println(response.bodyAsText())
-
-
+        val response = http.newPostRequest("/lol-login/v1/session/invoke", parameters)?.body()
+        println(response)
     }
 
     private suspend fun getUserInfoJwt(): UserInfoJwt {
@@ -215,6 +218,7 @@ class RiotApi(
         //getSimpleInventoryJwt()
         //getIdToken()
         //getUserInfoJwt()
+        quitCustomLobby()
         generateCustomLobby()
     }
 }
