@@ -8,6 +8,8 @@ import dev.nanologic.model.champselect.MySelection
 import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import io.ktor.util.*
+import java.time.Instant
+import java.util.Date
 
 class RiotApi(
     private val leagueClient: LeagueClient,
@@ -39,7 +41,18 @@ class RiotApi(
         val mySelection: MySelection = http.getRequest("/lol-champ-select/v1/session/my-selection").body()
 
         if (mySelection.championId == 0) {
-            
+            println("You need to confirm your champion before crashing the lobby!")
+            return false
+        }
+
+        if(timer.phase == "FINALIZATION") {
+            val current = Instant.now().toEpochMilli()
+            val remaining = (timer.internalNowInEpochMs + timer.adjustedTimeLeftInPhase) - current
+
+            if(remaining < 11000) {
+                println("Not enough time to crash lobby, you need a minimum of 11 seconds!")
+                return false
+            }
         }
 
         return true
