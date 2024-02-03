@@ -3,6 +3,8 @@ package dev.nanologic
 import dev.nanologic.client.LeagueClient
 import dev.nanologic.model.QuitGameMessage
 import dev.nanologic.model.SummonerProfile
+import dev.nanologic.model.champselect.ChampSelect
+import dev.nanologic.model.champselect.MySelection
 import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import io.ktor.util.*
@@ -25,9 +27,22 @@ class RiotApi(
         println(quitGameMessage)
     }
 
-    private suspend fun getCheckTimerSelectedChamp() {
-        val session = http.getRequest("/lol-champ-select/v1/session")
-        println(session.bodyAsText())
+    private suspend fun getCheckTimerSelectedChamp(): Boolean {
+        val champSelect: ChampSelect = http.getRequest("/lol-champ-select/v1/session").body()
+        val timer = champSelect.timer
+
+        if (champSelect.isCustomGame) {
+            println("You cannot use crash lobby exploit in a custom game!")
+            return false
+        }
+
+        val mySelection: MySelection = http.getRequest("/lol-champ-select/v1/session/my-selection").body()
+
+        if (mySelection.championId == 0) {
+            
+        }
+
+        return true
     }
 
     private fun generateCustomLobby() {
@@ -59,9 +74,9 @@ class RiotApi(
     }
 
     suspend fun crashLobby() {
-        quitCustomLobby().run {
+        //quitCustomLobby().run {
             getCheckTimerSelectedChamp()
-        }
+        //}
 
     }
 }
