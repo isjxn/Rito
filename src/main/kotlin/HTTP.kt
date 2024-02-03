@@ -9,6 +9,7 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.util.*
+import kotlinx.serialization.json.Json
 import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -22,7 +23,7 @@ class HTTP(
     private val clientAuthInfo: ClientAuthInfo,
     private val client: HttpClient = HttpClient(CIO) {
         this.install(ContentNegotiation) {
-            this.json()
+            this.json(json = Json { ignoreUnknownKeys = true })
         }
         engine {
             https {

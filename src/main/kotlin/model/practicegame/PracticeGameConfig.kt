@@ -9,7 +9,7 @@ data class PracticeGameConfig(
     var allowSpectators: String,
     var gameMap: GameMap,
     var gameMode: String,
-    var gameMutators: List<@Contextual Any>,
+    var gameMutators: List<String>,
     var gameName: String,
     var gamePassword: String,
     var gameTypeConfig: Int,

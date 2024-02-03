@@ -4,32 +4,21 @@ import dev.nanologic.client.LeagueClient
 import dev.nanologic.model.*
 import dev.nanologic.model.champselect.ChampSelect
 import dev.nanologic.model.champselect.MySelection
+import dev.nanologic.model.customlobby.CustomLobbyRoot
 import dev.nanologic.model.practicegame.CreatePracticeGameRequestDto
 import dev.nanologic.model.practicegame.GameMap
 import dev.nanologic.model.practicegame.PlayerGcoTokens
 import dev.nanologic.model.practicegame.PracticeGameConfig
 import dev.nanologic.model.simpleinventoryjwt.SimpleInventoryJwtRoot
-import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.statement.*
 import io.ktor.util.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 import java.time.Instant
 import java.util.*
-import java.net.URI
-import java.net.URLEncoder
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.nio.charset.StandardCharsets
-import java.util.Base64
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
 
 class RiotApi(
     private val leagueClient: LeagueClient,
@@ -40,21 +29,21 @@ class RiotApi(
         return summonerProfile
     }
     private suspend fun quitCustomLobby() {
-        val quitGameMessage: QuitGameMessage = http.postRequest("/lol-login/v1/session/invoke", StringValues.build {
+        http.postRequest("/lol-login/v1/session/invoke", StringValues.build {
             this.append("destination", "gameService")
             this.append("method", "quitGame")
-            this.append("args", "")
-        }).body()
+            this.append("args", "[]")
+        })
     }
 
     private suspend fun getCheckTimerSelectedChamp(): Boolean {
         val champSelect: ChampSelect = http.getRequest("/lol-champ-select/v1/session").body()
         val timer = champSelect.timer
 
-        if (champSelect.isCustomGame) {
+        /*if (champSelect.isCustomGame) {
             println("You cannot use crash lobby exploit in a custom game!")
             return false
-        }
+        }*/
 
         val mySelection: MySelection = http.getRequest("/lol-champ-select/v1/session/my-selection").body()
 
@@ -76,7 +65,7 @@ class RiotApi(
         return true
     }
 
-    private suspend fun generateCustomLobby() {
+    private suspend fun generateCustomLobby(): CustomLobbyRoot? {
         // Assuming placeholder values for async calls
         val clientVersion = getClientVersion()
         val simpleInventoryJwt = getSimpleInventoryJwt()
@@ -122,14 +111,23 @@ class RiotApi(
             playerGcoTokens = playerGcoTokens
         )
 
+        val json = Json { ignoreUnknownKeys = true }
+
         val parameters = StringValues.build {
             this.append("destination", "gameService")
             this.append("method", "createPracticeGameV4")
-            this.append("args", Json.encodeToString(listOf(createPracticeGameRequestDto)))
+            this.append("args", json.encodeToString(listOf(createPracticeGameRequestDto)))
         }
 
-        val response = http.newPostRequest("/lol-login/v1/session/invoke", parameters)?.body()
-        println(response)
+        val response = http.newPostRequest("/lol-login/v1/session/invoke", parameters)
+
+
+        response?.let {
+            val customLobbyRoot = json.decodeFromString<CustomLobbyRoot>(it.body())
+            return customLobbyRoot
+        }
+
+        return null
     }
 
     private suspend fun getUserInfoJwt(): UserInfoJwt {
@@ -182,43 +180,80 @@ class RiotApi(
         return regions
     }
 
-    private fun startChampionSelection() {
-
+    private suspend fun startChampionSelection(id: Double, gameTypeConfigId: Double) {
+        http.postRequest("/lol-login/v1/session/invoke", StringValues.build {
+            this.append("destination", "gameService")
+            this.append("method", "startChampionSelection")
+            this.append("args", "[${id.toInt()},${gameTypeConfigId.toInt()}]")
+        })
     }
 
-    private fun setClientReceivedGameMessage() {
-
+    private suspend fun setClientReceivedGameMessage(id: Double) {
+        http.postRequest("/lol-login/v1/session/invoke", StringValues.build {
+            this.append("destination", "gameService")
+            this.append("method", "setClientReceivedGameMessage")
+            this.append("args", "[${id.toInt()},CHAMP_SELECT_CLIENT]")
+        })
     }
 
-    private fun selectSpells() {
-
+    private suspend fun selectSpells(spellOne: Int, spellTwo: Int) {
+        http.postRequest("/lol-login/v1/session/invoke", StringValues.build {
+            this.append("destination", "gameService")
+            this.append("method", "selectSpells")
+            this.append("args", "[${spellOne},${spellTwo}]")
+        })
     }
 
-    private fun selectChampionV2() {
-
+    private suspend fun selectChampionV2(championId: Int, skinId: Int) {
+        http.postRequest("/lol-login/v1/session/invoke", StringValues.build {
+            this.append("destination", "gameService")
+            this.append("method", "selectChampionV2")
+            this.append("args", "[${championId},${skinId}]")
+        })
     }
 
-    private fun championSelectCompleted() {
-
+    private suspend fun championSelectCompleted() {
+        http.postRequest("/lol-login/v1/session/invoke", StringValues.build {
+            this.append("destination", "gameService")
+            this.append("method", "championSelectCompleted")
+            this.append("args", "[]")
+        })
     }
 
-    private fun setClientReceivedMaestroMessage() {
-
+    private suspend fun setClientReceivedMaestroMessage(id: Double) {
+        http.postRequest("/lol-login/v1/session/invoke", StringValues.build {
+            this.append("destination", "gameService")
+            this.append("method", "setClientReceivedMaestroMessage")
+            this.append("args", "[${id},GameClientConnectedToServer]")
+        })
     }
 
     suspend fun crashLobby() {
-        //quitCustomLobby()
-        //val canCrash = getCheckTimerSelectedChamp()
+        quitCustomLobby()
+        val canCrash = getCheckTimerSelectedChamp()
 
-        //if (canCrash) {
-            /*val customLobby =*/ //generateCustomLobby()
-        //}
+        if (canCrash) {
+            val customLobby = generateCustomLobby()
+            if (customLobby != null) {
+                startChampionSelection(customLobby.body.id, customLobby.body.gameTypeConfigId)
+                setClientReceivedGameMessage(customLobby.body.id)
+                selectSpells(32, 4)
+                selectChampionV2(1, 1000)
+                championSelectCompleted()
+                delay(15000)
+                quitCustomLobby()
+                setClientReceivedMaestroMessage(customLobby.body.id)
+            } else {
+                println("A custom lobby couldn't be created")
+            }
+        }
 
         //getClientVersion()
         //getSimpleInventoryJwt()
         //getIdToken()
         //getUserInfoJwt()
-        quitCustomLobby()
-        generateCustomLobby()
+        //quitCustomLobby()
+        //generateCustomLobby()
+        //quitCustomLobby()
     }
 }

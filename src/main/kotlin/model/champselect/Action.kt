@@ -10,6 +10,6 @@ data class Action(
     val id: Int,
     val isAllyAction: Boolean,
     val isInProgress: Boolean,
-    val pickTurn: Int,
+    //val pickTurn: Int?,
     val type: String
 )
