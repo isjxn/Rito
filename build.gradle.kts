@@ -17,6 +17,7 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 }
 

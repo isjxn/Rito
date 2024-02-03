@@ -22,6 +22,12 @@ class HTTP(
             https {
                 trustManager = TrustAllX509TrustManager
             }
+            // Timeout settings
+            endpoint {
+                requestTimeout = 100_000
+                connectTimeout = 100_000
+                socketTimeout = 100_000
+            }
         }
     }
 ) {
@@ -42,12 +48,14 @@ class HTTP(
                 it.host = "127.0.0.1"
                 it.port = port
                 it.path(path)
-               it.parameters.appendAll(parameters)
+                it.encodedParameters.appendAll(parameters)
             }
             this.basicAuth("riot", clientAuthInfo.remotingAuthToken)
+            this.contentType(ContentType.Application.Json)
         }
 
-        println(response.request.url)
+        //println(response.responseTime)
+        //println(response.request.url)
         return response
     }
 
@@ -64,6 +72,16 @@ class HTTP(
         }
 
         println(response.request.url)
+        return response
+    }
+
+    suspend fun bearerGetRequest(url: String, token: String): HttpResponse {
+        val response = client.get(url) {
+            this.bearerAuth(token)
+        }
+
+        print(response.request.url)
+
         return response
     }
 }

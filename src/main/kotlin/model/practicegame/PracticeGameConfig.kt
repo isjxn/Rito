@@ -15,7 +15,5 @@ data class PracticeGameConfig(
     var gameTypeConfig: Int,
     var gameVersion: String,
     var maxNumPlayers: Int,
-    var passbackDataPacket: @Contextual Any?,
-    var passbackUrl: @Contextual Any?,
     var region: String
 )
